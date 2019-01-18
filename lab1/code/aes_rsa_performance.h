@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
+#include <inttypes.h>
 
 #define NUM_BITS_AES 128
 

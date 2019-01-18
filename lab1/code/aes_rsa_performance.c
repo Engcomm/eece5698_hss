@@ -8,8 +8,29 @@
 
 #include "aes_rsa_performance.h"
 
+#define __STDC_FORMAT_MACROS
 #define BILLION 1000000000L
 
+static __inline__ uint64_t timer_start (void) {
+    unsigned cycles_low, cycles_high;        
+    asm volatile ("CPUID\n\t"                    
+        "RDTSC\n\t"                    
+        "mov %%edx, %0\n\t"                    
+        "mov %%eax, %1\n\t": 
+        "=r" (cycles_high), "=r" (cycles_low)::                    
+        "%rax", "%rbx", "%rcx", "%rdx");        
+    return ((uint64_t)cycles_high << 32) | cycles_low;
+}
+
+static __inline__ uint64_t timer_stop (void) {        
+    unsigned cycles_low, cycles_high;        
+    asm volatile("RDTSCP\n\t"
+        "mov %%edx, %0\n\t"                    
+        "mov %%eax, %1\n\t"                    
+        "CPUID\n\t": "=r" (cycles_high), "=r" (cycles_low):: "%rax",                    
+        "%rbx", "%rcx", "%rdx");        
+    return ((uint64_t)cycles_high << 32) | cycles_low;
+}
 
 int aes_performance_test() {
     FILE *fp;
@@ -26,19 +47,21 @@ int aes_performance_test() {
         printf("Unable to set the round key");
         return -1;
     }
-    struct timespec begin, end;
-    long long unsigned int diff;
+    // struct timespec begin, end;
+    uint64_t begin, end;
+    uint64_t diff;
     // 2. encrypt data using AES_encrypt and time each
     for (int k = 0; k < 1000000; k++) {
-        clock_gettime(CLOCK_MONOTONIC, &begin);
+        // clock_gettime(CLOCK_MONOTONIC, &begin);
+        begin = timer_start();
         AES_encrypt((const unsigned char *) text, cipher_text, (const AES_KEY *) &aes_key);
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        diff = BILLION * (end.tv_sec - begin.tv_sec) + (end.tv_nsec - begin.tv_nsec);
-        
-        // printf("Time elapsed = %llu nanoseconds\n", diff);
+        end = timer_stop();
+        // clock_gettime(CLOCK_MONOTONIC, &end);
+        // diff = BILLION * (end.tv_sec - begin.tv_sec) + (end.tv_nsec - begin.tv_nsec);
+        diff = end - begin;
         
         // 3. Write each set of AES and RSA data to CSV file
-        fprintf(fp, "%llu\n", diff);
+        fprintf(fp, "%lu\n", diff);
     }
     fclose(fp);
     return 0;
@@ -59,22 +82,21 @@ int RSA_performance_test() {
 
     RSA* rsa = createRSA(public_key);
     unsigned char *encrypted = malloc(RSA_size(rsa));
-
-    struct timespec begin, end;
-    long long unsigned int diff;
+    uint64_t begin, end;
+    uint64_t diff;
     int text_len = (int) strlen(text);
     // 2. encrypt data using AES_encrypt and time each
     for (int k = 0; k < 1000000; k++) {
-        clock_gettime(CLOCK_MONOTONIC, &begin);
+        begin = timer_start();
         RSA_public_encrypt(text_len, text, encrypted, rsa, RSA_PKCS1_PADDING);
-        clock_gettime(CLOCK_MONOTONIC, &end);
+        end = timer_stop();
         
-        diff = BILLION * (end.tv_sec - begin.tv_sec) + (end.tv_nsec - begin.tv_nsec);
+        diff = end - begin;
         // usleep(100);
-        // printf("Time elapsed = %llu nanoseconds\n", diff);
+        // printf("Time elapsed = %lu nanoseconds\n", diff);
     
         // 3. Write each set of AES and RSA data to CSV file
-        fprintf(fp, "%llu\n", diff);
+        fprintf(fp, "%lu\n", diff);
     }
     fclose(fp);
     return 0;

@@ -1,2 +1,0 @@
-RSA percent outside 4 sigma: 1.7263%
-AES percent outside 4 sigma: 0.0796%
