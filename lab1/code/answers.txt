@@ -1,0 +1,16 @@
+Arjun Gupta - Lab 1
+Question 1) 
+    The mean for the AES implementation was 368.91 clock cycles necessary, with a standard deviation of roughly 10 clock cycles.
+    The mean for the RSA implementation was 95612 clock cycles necessary, with a standard deviation of roughly 12407 clock cycles.
+    The data in the provided graphs was plotted up to 4 standard deviations away from the mean, where the RSA implementation had roughly 1.72% of the 1000000 data points outside of 4 standard deviations.
+    The AES implementation had 0.0796% of its 100000 datapoints 4 standard deviations outside of the mean. 
+    This makes RSA roughly 259 times slower (taking 259 more clock cycles) than AES.
+    Rather than encrypting files, the slow RSA should be used for situations that require digital signing (checksums, etc), or for encrypting other types of secure keys. 
+    AES would work for securing large files since it takes signifcantly less time to run.
+
+Question 2)
+    ECB mode is highly insecure relative to the block-chaining method of CBC. 
+    This can be seen because the outline of the penguin is still very visible in ECB mode while CBC mode distorts the image enough that it is unrecognizable.
+    Since CBC mode is not parallel like ECB mode, it could lead to slower performance with larger files, but for this example there was no distinguishable difference.
+    CBC mode is most likely the more secure mode, and while it requires an initilization vector to be generated, it prevents partial decryption since each successive block is dependent on the previous (series relationship vs parallel).
+    

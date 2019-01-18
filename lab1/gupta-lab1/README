@@ -1,0 +1,5 @@
+Before running, please update the Makefile in code/ to point to the directory of the openssl install.
+
+Then, change directories into code/ and run 'make p1' to create the RSA and AES timingdata.
+
+Run 'make p3' in order to get the secret code.
