@@ -1,0 +1,3 @@
+To run this code, please type make test.
+
+This will create the test.elf file which is a binary containing the output of the test.c program.
