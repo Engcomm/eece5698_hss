@@ -5,8 +5,8 @@ import pandas as pd
 import os
 import sys
 from scipy.stats import pearsonr
-#k0 = 20 / 19 
-#k15 = 198 / 197
+
+TRACES = 5000
 
 byte_index_map = {
     0:0, 
@@ -27,6 +27,25 @@ byte_index_map = {
     15:3
 }
 
+#Represents a lookup table of the hamming weight values for all byte values (0 - 255)
+#Was created by running the "hamming_weight" function on all values from 0 - 255
+#Having a lookup table significantly decreases the execution time for the CPA attack
+hamming_weight_vals = [ 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
+                        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
+                        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
+                        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+                        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
+                        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+                        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+                        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
+                        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
+                        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+                        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+                        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
+                        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
+                        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
+                        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
+                        4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8 ]
 
 sbox_inv = [82, 9, 106, 213, 48, 54, 165, 56, 191, 64, 163, 158, 129, 243, 215, 251,
             124, 227, 57, 130, 155, 47, 255, 135, 52, 142, 67, 68, 196, 222, 233, 203,
@@ -45,7 +64,6 @@ sbox_inv = [82, 9, 106, 213, 48, 54, 165, 56, 191, 64, 163, 158, 129, 243, 215, 
             160, 224, 59, 77, 174, 42, 245, 176, 200, 235, 187, 60, 131, 83, 153, 97,
             23, 43, 4, 126, 186, 119, 214, 38, 225, 105, 20, 99, 85, 33, 12, 125]
 
-
 def hamming_weight(num):
     num_ones = 0
     while num != 0:
@@ -53,39 +71,20 @@ def hamming_weight(num):
         num >>= 1
     return num_ones
 
-def get_data(file_selection):
-    # if file_out=None:
-    #     file_out = ''.join([file_selection.split('.')[0], '_cache.h5']
-    data_arr = pd.read_csv(file_selection, sep=' ', header=None).values
-    return data_arr
+#Gets data from a certain file and creates a .npy binary to 
+def get_data(file_selection, create_npy, num_traces):
+    if create_npy:
+        file_read = file_selection.split(".")[0] + '.txt'
+        with open(file_read) as f:
+            data_arr = np.mat([map(int, line.split()) for line in f])
+        np.save(file_selection, data_arr)
+    else:
+        data_arr = np.load(file_selection)
+    return data_arr[0:num_traces]
 
-def find_data_file():
-    files = [f for f in os.listdir(os.getcwd()) if os.path.isfile(f)]
-    print('Current files in %s:' % subdir)
-    print("-------------------------------------------------------------")
-    for i in range(0, len(files)):
-        print("{}. {}".format(i + 1, files[i]))
-    print("-------------------------------------------------------------")
-    try:
-        file_num = int(input("Enter the number representing the file you want to read from: "))
-        if file_num > len(files) or file_num < 0:
-            file_num = -1
-            raise ValueError
-    except ValueError:
-        print("Entered number is invalid.")
-        while 0 < file_num <= len(files):
-            file_num = int(input("Enter the number representing the file you want to read from: "))
-    file = files[file_num - 1]
-    path_to_file = os.path.normpath(os.path.join(path, file))
-    return path_to_file
-
-def normalize_data(data):
-    min_data = min(data)
-    data = [d - min_data for d in data]
-    return data
 
 def plot_one_row(data):
-    data = normalize_data(data)
+    print("Plotting one power trace...")
     fig = plt.figure(1)
     ax = fig.add_subplot(111)
     ax.set_title("Normalized Power Trace Data for one row.")
@@ -103,8 +102,8 @@ def plot_one_row(data):
 def get_hamming_weight_data(cipher_data, key):
     #Test the first byte for now
     shift_cipher_byte = byte_index_map[key]
-    regular_cipher_byte =key
-    hamming_weight_vals = []
+    regular_cipher_byte = key
+    hamming_weights = []    
     #HW_n = S^-1(C_shiftcipherbyte XOR Kn) XOR C_regularcipherbyte for n = 0..255
     for sample in cipher_data:
         shift_cipher_byte_val = sample[shift_cipher_byte]
@@ -112,55 +111,87 @@ def get_hamming_weight_data(cipher_data, key):
         hw_sample_data = []
         # print(shift_cipher_byte_val)
         for key in range(0, 256):
-            sbox_inv_val = sbox_inv[int(shift_cipher_byte_val ^ key)]
+            sbox_inv_val = sbox_inv[shift_cipher_byte_val ^ key]
             hw_data = sbox_inv_val ^ regular_cipher_byte_val
-            hw_val = hamming_weight(hw_data)
+            hw_val = hamming_weight_vals[hw_data]
             hw_sample_data.append(hw_val)
-        hamming_weight_vals.append(hw_sample_data)
-    return hamming_weight_vals
-
+        hamming_weights.append(hw_sample_data)
+    return hamming_weights
 
 #Find pearson correlation between samples @ t=2669 
-def get_pearson_data(power_trace, hamming_weight_vals, num_traces=5000):
+def get_pearson_data(power_trace, hamming_weight_vals, num_traces=TRACES):
     #For each possible key byte get an array of (Power_trace[i][2668]) and (Hamming_weight_vals[i][j])
     power_trace_leaky = power_trace[0:num_traces,2668]
-    # print("Leaky power trace is: ")
-    # print(power_trace_leaky)
-    # print("Leaky Power trace /length is %s " % len(power_trace_leaky))
     pearson_correlation = []
     for key in range(0, 256):
-        # print(key)
         hw_vals = [hamming_weight_vals[i][key] for i in range(0, num_traces)]
         pearson_val, _ = pearsonr(power_trace_leaky, hw_vals)
         pearson_correlation.append(pearson_val)
-    print("Min is {} with index {}".format(min(pearson_correlation),pearson_correlation.index(min(pearson_correlation))))
-    return pearson_correlation        
+    key_byte_val = pearson_correlation.index(min(pearson_correlation))
+    return key_byte_val, pearson_correlation        
+
+
+def get_trace_data(expression, num_traces=TRACES):
+    subdir = "data"
+    try:
+        #data/ added to the file structure in order to properly parse in the get_data() method
+        files = [subdir + "/" + f for f in os.listdir(subdir)]
+    except OSError:
+        #error raises on either data folder being empty or folder not existing.
+        print("No Data to Read From. Please create \"data\" folder with files *trace_int.txt and *cipher.txt")
+        sys.exit(0)
+    for f in files:
+        if expression in f:
+            found_file = f
+            break
+    potential_npy = found_file.split('.')[0] + '.npy'
+    create_npy = False
+    print("Getting Trace Data for %s ..." % found_file.split('.')[0])
+    if potential_npy not in files:
+        print("Caching %s data in .npy file for easier future use." % found_file)
+        create_npy = True
+    return get_data(potential_npy, create_npy, num_traces)
+
+#Retreives the key byte by getting the pearson correlation data for a specific cipherbyte and power trace column
+def retreive_key_bytes(power_trace_data, cipher_data, num_traces=TRACES):
+    found_key_bytes = np.zeros(shape=16, dtype=np.int16)
+    correlation_data = np.zeros(shape=(16, 256), dtype=np.float64)
+    for key in range(0, len(found_key_bytes)):
+        key_byte, pearson_data = get_pearson_data(power_trace_data, get_hamming_weight_data(cipher_data, key))
+        index_to_insert = byte_index_map[key]
+        found_key_bytes[index_to_insert] = key_byte
+        correlation_data[index_to_insert] = pearson_data
+    print("Found {} keys from analyzing correlation...".format(len(found_key_bytes)))
+    print("Retreived key is: {}".format(found_key_bytes))
+    return found_key_bytes, correlation_data
+
+
+#Plots the Pearsons correlation data 
+def plot_correlation_data(key_bytes, correlation_data):
+    print("Plotting all correlation data...")
+    fig,axes = plt.subplots(4, 4, sharex=True, sharey=True)
+    fig.text(0.5, 0.04, 'All Possible Key Values', ha='center', fontsize=26)
+    fig.text(0.04, 0.5, 'Pearson Correlation Coefficient', va='center', rotation='vertical', fontsize=26)
+    plot_num = 0
+
+    x_vals = np.arange(start=0, stop=256, step=1, dtype=int)
+    for i in range(0, len(axes)):
+        for j in range(0, len(axes[0])):
+            title_string = "Key Byte #{} with value {}".format(plot_num+1, key_bytes[plot_num])
+            axes[i,j].set_title(title_string)
+            axes[i,j].set_xlim((0, 256))
+            axes[i,j].plot(x_vals, correlation_data[plot_num])
+            plot_num += 1
 
 
 if __name__ == '__main__':
-    #TODO: Figure out if caching data is necessary 
-        #Speeds up execution time
-    print(byte_index_map)
-    subdir = "data"
-    path = os.path.normpath(os.path.join(os.getcwd(), subdir))
-    os.chdir(path)
+    plt.rcParams.update({'font.size': 18})
 
-    print("Select power trace data to read from: ")
+    power_trace_data = get_trace_data(expression="trace_int.txt")
+    cipher_data = get_trace_data(expression="cipher.txt")
 
-    file_selection = find_data_file()
-    # print(file_selection)
-    with open(file_selection) as f:
-        data_output = get_data(f)
-    plot_one_row(data_output[0])
-
-    cipher_data_file = find_data_file()
-    with open(cipher_data_file) as f:
-        cipher_data = get_data(cipher_data_file)
-    print(len(cipher_data[0]))
-    pearson_data = []
-    for key in range(0, 16):
-        weights = get_hamming_weight_data(cipher_data, key)
-
-        pearson_key = get_pearson_data(data_output, weights)
-        pearson_data.append(pearson_key)
+    plot_one_row(power_trace_data[0])
+    
+    key_bytes, correlation_data = retreive_key_bytes(power_trace_data, cipher_data)
+    plot_correlation_data(key_bytes, correlation_data)
     plt.show()
