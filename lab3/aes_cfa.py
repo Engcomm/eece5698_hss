@@ -140,6 +140,7 @@ def get_trace_data(expression, num_traces=TRACES):
         #error raises on either data folder being empty or folder not existing.
         print("No Data to Read From. Please create \"data\" folder with files *trace_int.txt and *cipher.txt")
         sys.exit(0)
+    found_file = ""
     for f in files:
         if expression in f:
             found_file = f
@@ -187,8 +188,8 @@ def plot_correlation_data(key_bytes, correlation_data):
 if __name__ == '__main__':
     plt.rcParams.update({'font.size': 18})
 
-    power_trace_data = get_trace_data(expression="trace_int.txt")
-    cipher_data = get_trace_data(expression="cipher.txt")
+    power_trace_data = get_trace_data(expression="trace_int")
+    cipher_data = get_trace_data(expression="cipher")
 
     plot_one_row(power_trace_data[0])
     
