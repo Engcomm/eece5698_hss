@@ -131,17 +131,15 @@ void savePlaintext()
     if(plainFP == NULL)
         return;
     fwrite(plaintext, sizeof(uint8_t), 16, plainFP);
-    fwrite("\n", sizeof(uint8_t), 1, plainFP);
 }
 void saveCiphertext()
 {
     fwrite(ciphertext, sizeof(uint8_t), 16, cipherFP);
-    fwrite("\n", sizeof(uint8_t), 1, cipherFP);
 }
 void saveTiming()
 {
-    fprintf(timingFP, "%d\n", *timing);
-    // fwrite(timing, sizeof(uint32_t), 1, timingFP);
+    // fprintf(timingFP, "%d\n", *timing);
+    fwrite(timing, sizeof(uint32_t), 1, timingFP);
 }
 void saveTrace()
 {
@@ -286,5 +284,5 @@ void finish()
     if( plainFP != NULL )
         fclose(plainFP);
 
-    unmap_offset(addr);
+    unmap_offset(target);
 }
