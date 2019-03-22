@@ -1,3 +1,6 @@
+lab1/openssl
+
+
 lab3/link.sh
 lab3/data
 
@@ -8,6 +11,7 @@ lab5/code/system_profile
 lab5/code/victim
 lab5/code/analysis
 
+.vscode/ 
 
 # Prerequisites
 *.d
