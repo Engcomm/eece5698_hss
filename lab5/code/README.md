@@ -8,7 +8,7 @@ These commands add the openssl library to the shared library path so that both t
 
 # Compiling the Code
 Run `make binaries` to compile all the code...
-All binaries are compiled using 
+All binaries are dynamically linked using the shared libcrypto.so.3 library.
 
 # System profiling
 Run `make plot_profile` to run the system_profile.c file and plot the results in Python.
