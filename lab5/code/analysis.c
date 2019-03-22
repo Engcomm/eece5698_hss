@@ -149,7 +149,7 @@ void printHelp(char* argv[])
 void parseOpt(int argc, char *argv[])
 {
     int opt;
-    while((opt = getopt(argc, argv, "c:t:o:s:r")) != -1){
+    while((opt = getopt(argc, argv, "c:t:o:s:r:")) != -1){
         switch(opt){
         case 'c':
             cipherFileName = optarg;
