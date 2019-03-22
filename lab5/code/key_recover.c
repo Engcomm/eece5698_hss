@@ -58,7 +58,6 @@ void saveResult();
 
 int main(int argc, char** argv){
     parseOpt(argc, argv);
-    printf("Parsed opts\n");
     init();
 #ifdef DEBUG
     uint32_t i = 0;
@@ -70,7 +69,6 @@ int main(int argc, char** argv){
         i++;
 #endif
 	}
-    printf("Finished processing\n");
     finish();
 #ifdef DEBUG
         printf("Number samples used: %i\n", i);

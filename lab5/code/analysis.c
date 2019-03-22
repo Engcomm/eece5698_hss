@@ -40,6 +40,7 @@ uint32_t *timing;
 
 unsigned long long counter[16][256];
 float times[16][256];
+uint8_t key_recover[16];
 
 void printHelp(char* argv[]);
 void parseOpt(int argc, char *argv[]);

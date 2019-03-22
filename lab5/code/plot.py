@@ -10,6 +10,7 @@ result_file = args.result_file
 
 counter = []
 
+plt.rcParams.update({'font.size':22})
 def loadResultFile():
     global counter
     fid = open(result_file, 'r')

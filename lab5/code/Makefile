@@ -3,14 +3,14 @@ LIB = openssl/libcrypto.so.3
 CFLAGS = -Iopenssl/includes -Lopenssl/
 LFLAGS = -lcrypto
 samples = 1000000
-threshold = 175
+threshold = 65
 
 te0 = 1d2fa0
 te1 = 1d2ba0
 te2 = 1d27a0
 te3 = 1d23a0
 
-.PHONY: all run binaries analyze_data plot_data
+.PHONY: all run binaries analyze_data plot_data setup
 
 all: binaries setup collect_data analyze_data recover_key #plot_data
 
@@ -53,12 +53,17 @@ analyze_data:
 	./analysis -t data/timing_te2.txt -c data/cipher_te2.txt -o data/result_te2.txt -s $(threshold) -r data/cipher_threshold_te2.txt
 	./analysis -t data/timing_te3.txt -c data/cipher_te3.txt -o data/result_te3.txt -s $(threshold) -r data/cipher_threshold_te3.txt
 
+plot_cache_hits:
+	./analysis -t data/timing_te0.txt -c data/cipher_te0.txt -o data/result_te0_default.txt -s 20000 -r data/cipher_threshold_default.txt
+	python plot.py data/result_te0_default.txt
+
+
+
 recover_key:
 	./key_recover -c data/cipher_threshold_te0.txt -n 0
 	./key_recover -c data/cipher_threshold_te1.txt -n 1
 	./key_recover -c data/cipher_threshold_te2.txt -n 2
 	./key_recover -c data/cipher_threshold_te3.txt -n 3
-
 
 
 plot_data:
@@ -71,9 +76,10 @@ plot_profile:
 	./system_profile 
 	python plot_profile.py timing_data_cache_hit timing_data_cache_miss
 
+
 .PHONY: clean
 clean:	
-	rm -f victim attacker analysis system_profile
+	rm -f victim attacker analysis system_profile key_recover
 
 clean_data:
 	rm -f data/* timing_data_cache_hit timing_data_cache_miss

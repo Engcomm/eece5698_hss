@@ -78,37 +78,35 @@ void unmap_offset(void *address) {
                 sysconf(_SC_PAGE_SIZE));
 }
 
-
-
 int main()
 {
     FILE* fp_cache_hit = fopen("timing_data_cache_hit", "wb");
     FILE* fp_cache_miss = fopen("timing_data_cache_miss", "wb");
     uint32_t num_traces = 1000000;
     size_t offset = 0;
-    target = malloc(sizeof(uint32_t));
+    // target = malloc(sizeof(uint32_t));
     timing_data = (uint32_t*) malloc(sizeof(uint32_t));
-    target = map_offset("openssl/libcrypto.so", offset);
+    // target = map_offset("openssl/libcrypto.so", offset);
+    void* addr = malloc(10);
     // //testing cache hits
-
-    maccess(target);
+    maccess(addr);
 
     for (int i = 0; i < num_traces; i++) 
     {
-        *timing_data = reload(target);
+        *timing_data = reload(addr);
         fprintf(fp_cache_hit, "%d\n", *timing_data);
     }
-
+  
     for (int i = 0; i < num_traces; i++) 
     {
-        clflush( target);
-        *timing_data = reload( target);
+        clflush( addr);
+        *timing_data = reload( addr);
         fprintf(fp_cache_miss, "%d\n", *timing_data);
 
     }
 
     fclose(fp_cache_hit);
     fclose(fp_cache_miss);
-    unmap_offset(target);
+    unmap_offset(addr);
 
 }

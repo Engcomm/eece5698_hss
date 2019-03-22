@@ -5,26 +5,41 @@ import math
 
 plt.rcParams.update({'font.size':22})
 def plot_histo(data_hit, data_miss, figure):
-    ax = figure.add_subplot(111)
-    ax.set_title('Timing distribution for system profile')
+    ax = figure.add_subplot(211)
+    ax.set_title('Timing distribution for system profile, sample size = %d' % len(data_hit))
     ax.set_xlabel('Time (cycles)')
-    ax.set_ylabel('Frequency')
+    ax.set_ylabel('Frequency, Bin Width = 5 Cycles')
     mean_hit = np.mean(data_hit)
     std_hit = np.std(data_hit)
-    data_hit = [d for d in data_hit if d < (mean_hit + 3*std_hit)]
+    print("STD hit is %d" % std_hit)
+    # data_hit = [d for d in data_hit if d < (mean_hit + std_hit)]
 
     mean_miss = np.mean(data_miss)
     std_miss = np.std(data_miss)
-    data_miss = [d for d in data_miss if d < (mean_miss + 3*std_miss)]
+    print("STD Miss is %d" % std_miss)
+    # data_miss = [d for d in data_miss if d < (mean_miss + std_miss)]
 
-    print(min(data_hit))
-    print(max(data_hit))
-    ax.hist(data_hit)
+    bin_list = range(np.min(data_hit), np.max(data_hit) + 5, 5)
+    ax.set_xlim(np.min(data_hit), mean_hit*2)
+    ax.hist(data_hit, color='g', bins=bin_list)
+    ax.legend(['Cache Hit Timing'])
+    ax.text((ax.get_xlim()[0] + ax.get_xlim()[1]) / 2, ax.get_ylim()[1]/2, "Mean for hit data is %d cycles" % np.mean(data_hit), color='g', fontsize=40)
 
-    ax.hist(data_miss)
-    ax.text(np.mean(data_miss), plt.ylim()[1]-70000, "Mean for missed data is is %d cycles" % np.mean(data_miss), color='g', fontsize=40)
-    ax.text(np.mean(data_miss), plt.ylim()[1]-30000, "Mean for hit data is %d cycles" % np.mean(data_hit), color='b', fontsize=40)
-    ax.legend(['Cache Hit Timing', 'Cache Miss Timing'])
+    ax = figure.add_subplot(212)
+    ax.set_xlabel('Time (cycles)')
+    ax.set_ylabel('Frequency, Bin Width = 20 Cycles')
+    bin_list = range(np.min(data_miss), np.max(data_miss) + 20, 20)
+    ax.set_xlim(np.min(data_miss) - (np.min(data_miss) % 20), np.max(data_miss))
+    ax.hist(data_miss, bins=bin_list)
+    ax.text((ax.get_xlim()[0] + ax.get_xlim()[1]) / 2, ax.get_ylim()[1]/2, "Mean for missed data is is %d cycles" % np.mean(data_miss), color='b', fontsize=40)
+    ax.legend(['Cache Miss Timing'])
+
+    print("Hit Mean before removal of excess %d" % mean_hit)
+    print("Miss Mean before removal of excess %d" % mean_miss)
+    print("Hit Mean before removal of excess %d" % np.mean(data_hit))
+    print("Miss Mean before removal of excess %d" % np.mean(data_miss))
+
+    
 
 
 
