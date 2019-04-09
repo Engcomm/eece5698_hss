@@ -93,7 +93,7 @@ void setupCovertChannel()
     for (int k = 0; k < 100000; k++) 
     {
         data = rand() % 256;
-        if (!(sniffedData = obtainData(data)) || (data != sniffedData))
+        if ((sniffedData = obtainData(data)) != data)
         {
             continue;
         }
