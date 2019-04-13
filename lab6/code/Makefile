@@ -22,7 +22,7 @@ measure_execution_window :
 	number=1 ; while [[ $$number -le 200 ]] ; do \
 		echo $$number ; \
 		((number = number + 1)) ; \
-		$(CC) measure_execution_window.c -DWINDOW=$$number -DDEBUG $(LDLIBS) -o $@ ; \
+		$(CC) measure_execution_window.c -DWINDOW=$$number $(LDLIBS) -o $@ ; \
 		./$@ ; \
 	done
 
