@@ -127,10 +127,10 @@ void findThreshold()
     reloadTime /= numTests;
     flushReloadTime /= numTests;
     reload_threshold = (reloadTime*.8) + (flushReloadTime*.2);
-#ifdef DEBUG
+// #ifdef DEBUG
     printf("Reload time is %zu\t Flush+Reload time is %zu\n", reloadTime, flushReloadTime);
     printf("Threshold is %zu\n", reload_threshold);
-#endif 
+// #endif 
 }
 
 
